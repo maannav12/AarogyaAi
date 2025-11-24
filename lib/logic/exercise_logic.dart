@@ -1,33 +1,36 @@
 // lib/logic/exercise_logic.dart
 import 'dart:math';
 
+enum ExerciseState { neutral, starting, middle, completed }
+
 class ExerciseLogic {
   final Map<String, Map<String, double>> thresholds = {
     'tree_pose': {
       'knee_bend': 25.0,
-      'balance_duration': 1.5,
-      'hip_variance': 20.0,
+      'balance_duration': 3.0, // Increased for better stability check
+      'hip_variance': 15.0,
     },
     'squat': {
       'down': 100.0,
-      'up': 130.0,
-      'knee_alignment': 30.0,
+      'up': 160.0, // Stricter up
+      'knee_alignment': 20.0, // Stricter alignment
     },
     'pushup': {
-      'down': 100.0,
-      'up': 150.0,
-      'hip_variance': 20.0,
+      'down': 90.0, // Deeper pushup
+      'up': 160.0,
+      'hip_variance': 15.0,
     },
     'jumping_jack': {
       'down': 30.0,
-      'up': 90.0,
+      'up': 150.0, // Arms higher
     }
   };
 
-  String exerciseState = "up"; // Default to 'up' or 'start'
+  ExerciseState exerciseState = ExerciseState.neutral;
   int repCount = 0;
   DateTime? poseStartTime;
-  DateTime? lastPoseEndTime;
+  DateTime? lastStateChangeTime;
+  static const Duration stateDebounceTime = Duration(milliseconds: 300);
 
   double _getAngle(Map<String, double> angles, String name) {
     return angles[name] ?? 0.0;
@@ -35,88 +38,99 @@ class ExerciseLogic {
 
   void reset() {
     repCount = 0;
-    exerciseState = "up"; // Reset to 'up'
+    exerciseState = ExerciseState.neutral;
     poseStartTime = null;
-    lastPoseEndTime = null;
+    lastStateChangeTime = null;
   }
 
   bool countReps(String exercise, Map<String, double> angles) {
     DateTime currentTime = DateTime.now();
+    
+    // Debounce state changes
+    if (lastStateChangeTime != null && 
+        currentTime.difference(lastStateChangeTime!) < stateDebounceTime) {
+      return false;
+    }
+
     bool repCompleted = false;
 
     switch (exercise) {
       case 'tree_pose':
-        double rightKnee = _getAngle(angles, 'right_knee');
-        double leftKnee = _getAngle(angles, 'left_knee');
-        double rightHip = _getAngle(angles, 'right_hip');
-        double leftHip = _getAngle(angles, 'left_hip');
-
-        if (rightKnee > 0 && leftKnee > 0 && rightHip > 0 && leftHip > 0) {
-          double kneeDiff = (rightKnee - leftKnee).abs();
-          double hipDiff = (rightHip - leftHip).abs();
-
-          if (kneeDiff > thresholds['tree_pose']!['knee_bend']! && hipDiff < thresholds['tree_pose']!['hip_variance']!) {
-            if (exerciseState == 'up') {
-              poseStartTime = currentTime;
-              exerciseState = 'holding';
-            } else if (exerciseState == 'holding') {
-              double duration = currentTime.difference(poseStartTime!).inMilliseconds / 1000.0;
-              if (duration >= thresholds['tree_pose']!['balance_duration']!) {
-                if (lastPoseEndTime == null || currentTime.difference(lastPoseEndTime!).inSeconds > 1) {
-                  repCount++;
-                  repCompleted = true;
-                  lastPoseEndTime = currentTime;
-                  exerciseState = 'up'; // Reset for next rep
-                }
-              }
-            }
-          } else {
-            if (exerciseState == 'holding') {
-              exerciseState = 'up';
-            }
-            poseStartTime = null;
-          }
-        }
+        // Tree pose is time-based, not rep-based in the traditional sense
+        // Logic handled in getFormFeedback mostly, but we can track "successful holds" here
         break;
+        
       case 'squat':
         double rightKnee = _getAngle(angles, 'right_knee');
         double leftKnee = _getAngle(angles, 'left_knee');
         if (rightKnee > 0 && leftKnee > 0) {
           double kneeAngle = (rightKnee + leftKnee) / 2;
-          if (exerciseState == 'up' && kneeAngle < thresholds['squat']!['down']!) {
-            exerciseState = 'down';
-          } else if (exerciseState == 'down' && kneeAngle > thresholds['squat']!['up']!) {
-            exerciseState = 'up';
-            repCount++;
-            repCompleted = true;
+          
+          if (exerciseState == ExerciseState.neutral || exerciseState == ExerciseState.starting) {
+             if (kneeAngle > thresholds['squat']!['up']!) {
+               exerciseState = ExerciseState.starting;
+             }
+             if (kneeAngle < thresholds['squat']!['down']!) {
+               exerciseState = ExerciseState.middle;
+               lastStateChangeTime = currentTime;
+             }
+          } else if (exerciseState == ExerciseState.middle) {
+            if (kneeAngle > thresholds['squat']!['up']!) {
+              exerciseState = ExerciseState.starting;
+              repCount++;
+              repCompleted = true;
+              lastStateChangeTime = currentTime;
+            }
           }
         }
         break;
+        
       case 'pushup':
         double rightElbow = _getAngle(angles, 'right_elbow');
         double leftElbow = _getAngle(angles, 'left_elbow');
         if (rightElbow > 0 && leftElbow > 0) {
           double elbowAngle = (rightElbow + leftElbow) / 2;
-          if (exerciseState == 'up' && elbowAngle < thresholds['pushup']!['down']!) {
-            exerciseState = 'down';
-          } else if (exerciseState == 'down' && elbowAngle > thresholds['pushup']!['up']!) {
-            exerciseState = 'up';
-            repCount++;
-            repCompleted = true;
+          
+          if (exerciseState == ExerciseState.neutral || exerciseState == ExerciseState.starting) {
+            if (elbowAngle > thresholds['pushup']!['up']!) {
+              exerciseState = ExerciseState.starting;
+            }
+            if (elbowAngle < thresholds['pushup']!['down']!) {
+              exerciseState = ExerciseState.middle;
+              lastStateChangeTime = currentTime;
+            }
+          } else if (exerciseState == ExerciseState.middle) {
+            if (elbowAngle > thresholds['pushup']!['up']!) {
+              exerciseState = ExerciseState.starting;
+              repCount++;
+              repCompleted = true;
+              lastStateChangeTime = currentTime;
+            }
           }
         }
         break;
+        
       case 'jumping_jack':
         double rightShoulder = _getAngle(angles, 'right_shoulder');
         double leftShoulder = _getAngle(angles, 'left_shoulder');
         if (rightShoulder > 0 && leftShoulder > 0) {
           double shoulderAngle = (rightShoulder + leftShoulder) / 2;
-          if (exerciseState == 'up' && shoulderAngle > thresholds['jumping_jack']!['up']!) {
-            exerciseState = 'down'; // Arms are up
-          } else if (exerciseState == 'down' && shoulderAngle < thresholds['jumping_jack']!['down']!) {
-            exerciseState = 'up'; // Arms are down
-            repCount++;
-            repCompleted = true;
+          
+          if (exerciseState == ExerciseState.neutral || exerciseState == ExerciseState.starting) {
+            if (shoulderAngle < thresholds['jumping_jack']!['down']!) {
+              exerciseState = ExerciseState.starting; // Arms down
+            }
+            if (shoulderAngle > thresholds['jumping_jack']!['up']!) {
+              exerciseState = ExerciseState.middle; // Arms up
+              lastStateChangeTime = currentTime;
+            }
+          } else if (exerciseState == ExerciseState.middle) {
+            if (shoulderAngle < thresholds['jumping_jack']!['down']!) {
+              exerciseState = ExerciseState.starting;
+              repCount++;
+              repCompleted = true;
+              lastStateChangeTime = currentTime;
+            }
           }
         }
         break;
@@ -124,9 +138,31 @@ class ExerciseLogic {
     return repCompleted;
   }
 
-  Map<String, dynamic> getFormFeedback(String exercise, Map<String, double> angles) {
-    int confidence = 0;
+  Map<String, dynamic> getFormFeedback(
+      String exercise, 
+      Map<String, double> angles, 
+      double poseConfidence, 
+      List<String> missingLandmarks) {
+    
+    int confidence = (poseConfidence * 100).round();
     List<String> feedback = [];
+
+    // 1. Visibility Check (Highest Priority)
+    if (missingLandmarks.isNotEmpty) {
+      if (missingLandmarks.length > 3) {
+        feedback.add("Whole body not visible");
+      } else {
+        feedback.add("${missingLandmarks.join(', ')} not visible");
+      }
+      // If critical parts are missing, we can't judge form
+      return {'confidence': 0, 'feedback': feedback}; 
+    }
+
+    // 2. Confidence Check
+    if (poseConfidence < 0.6) {
+      feedback.add("Improve lighting or stand still");
+      return {'confidence': confidence, 'feedback': feedback};
+    }
 
     void addFeedback(String msg) {
       if (!feedback.contains(msg)) {
@@ -134,84 +170,115 @@ class ExerciseLogic {
       }
     }
 
+    // 3. Form Check
     switch (exercise) {
       case 'tree_pose':
         double rightKnee = _getAngle(angles, 'right_knee');
         double leftKnee = _getAngle(angles, 'left_knee');
         double rightHip = _getAngle(angles, 'right_hip');
         double leftHip = _getAngle(angles, 'left_hip');
-        if (rightKnee > 0 || leftKnee > 0) {
-          double kneeDiff = (rightKnee - leftKnee).abs();
-          double hipDiff = (rightHip - leftHip).abs();
-          if (kneeDiff < thresholds['tree_pose']!['knee_bend']!) {
-            addFeedback("Raise your knee higher");
-          }
-          if (hipDiff > thresholds['tree_pose']!['hip_variance']!) {
-            addFeedback("Keep your hips level");
-          }
-          double kneeScore = min(100, (kneeDiff / thresholds['tree_pose']!['knee_bend']!) * 100);
-          double hipScore = max(0, 100 - (hipDiff / thresholds['tree_pose']!['hip_variance']!) * 100);
-          confidence = ((kneeScore + hipScore) / 2).round();
+        
+        // Determine which leg is raised (the one with smaller knee angle)
+        bool rightLegRaised = rightKnee < leftKnee;
+        double raisedKneeAngle = rightLegRaised ? rightKnee : leftKnee;
+        double standingKneeAngle = rightLegRaised ? leftKnee : rightKnee;
+        
+        if (standingKneeAngle < 160) {
+           addFeedback("Straighten standing leg");
+        }
+        
+        if (raisedKneeAngle > 45) { // Threshold for "bent enough"
+           addFeedback("Bend raised knee more");
+        }
+
+        double hipDiff = (rightHip - leftHip).abs();
+        if (hipDiff > thresholds['tree_pose']!['hip_variance']!) {
+          addFeedback("Keep hips level");
+        }
+        
+        // Tree pose holding logic
+        if (feedback.isEmpty) {
+           if (poseStartTime == null) {
+             poseStartTime = DateTime.now();
+             addFeedback("Hold position...");
+           } else {
+             final duration = DateTime.now().difference(poseStartTime!).inSeconds;
+             if (duration < thresholds['tree_pose']!['balance_duration']!) {
+                addFeedback("Hold... ${thresholds['tree_pose']!['balance_duration']!.toInt() - duration}s");
+             } else {
+                addFeedback("Great balance!");
+                // Could increment a "hold count" here if desired
+             }
+           }
+        } else {
+          poseStartTime = null; // Reset timer if form breaks
         }
         break;
+        
       case 'squat':
         double rightKnee = _getAngle(angles, 'right_knee');
         double leftKnee = _getAngle(angles, 'left_knee');
-        if (rightKnee > 0 && leftKnee > 0) {
-          double kneeAngle = (rightKnee + leftKnee) / 2;
-          double kneeDiff = (rightKnee - leftKnee).abs();
-          if (exerciseState == 'down' || kneeAngle < thresholds['squat']!['up']!) {
-            if (kneeAngle > thresholds['squat']!['down']!) {
-              addFeedback("Squat deeper");
-            }
-            if (kneeDiff > thresholds['squat']!['knee_alignment']!) {
-              addFeedback("Keep knees aligned");
-            }
-          }
-          double depthScore = 100 - ((kneeAngle - thresholds['squat']!['down']!) / (thresholds['squat']!['up']! - thresholds['squat']!['down']!)) * 100;
-          double alignScore = max(0, 100 - (kneeDiff / thresholds['squat']!['knee_alignment']!) * 100);
-          confidence = (depthScore.clamp(0, 100) + alignScore) ~/ 2;
+        double kneeAngle = (rightKnee + leftKnee) / 2;
+        double kneeDiff = (rightKnee - leftKnee).abs();
+
+        if (exerciseState == ExerciseState.middle) { // Down position
+           if (kneeAngle > thresholds['squat']!['down']!) {
+             addFeedback("Go lower");
+           }
         }
+        
+        if (kneeDiff > thresholds['squat']!['knee_alignment']!) {
+          addFeedback("Keep knees symmetric");
+        }
+        
+        // Check for knees caving in (requires hip/ankle context, simplified here as knee alignment)
         break;
+        
       case 'pushup':
         double rightElbow = _getAngle(angles, 'right_elbow');
         double leftElbow = _getAngle(angles, 'left_elbow');
         double rightHip = _getAngle(angles, 'right_hip');
         double leftHip = _getAngle(angles, 'left_hip');
-        if (rightElbow > 0 && leftElbow > 0) {
-          double elbowAngle = (rightElbow + leftElbow) / 2;
-          double hipDiff = (rightHip - leftHip).abs();
-          if (exerciseState == 'down' || elbowAngle < thresholds['pushup']!['up']!) {
-            if (elbowAngle > thresholds['pushup']!['down']!) {
-              addFeedback("Lower your chest");
-            }
-            if (hipDiff > thresholds['pushup']!['hip_variance']!) {
-              addFeedback("Keep your body straight");
-            }
-          }
-          double depthScore = 100 - ((elbowAngle - thresholds['pushup']!['down']!) / (thresholds['pushup']!['up']! - thresholds['pushup']!['down']!)) * 100;
-          double hipScore = max(0, 100 - (hipDiff / thresholds['pushup']!['hip_variance']!) * 100);
-          confidence = (depthScore.clamp(0, 100) + hipScore) ~/ 2;
+        
+        double hipAngle = (rightHip + leftHip) / 2;
+        
+        if (hipAngle < 150) {
+          addFeedback("Don't sag hips");
+        } else if (hipAngle > 200) { // Hyperextension check (approx)
+          addFeedback("Lower hips");
+        }
+
+        if (exerciseState == ExerciseState.middle) {
+           double elbowAngle = (rightElbow + leftElbow) / 2;
+           if (elbowAngle > thresholds['pushup']!['down']!) {
+             addFeedback("Chest lower");
+           }
         }
         break;
+        
       case 'jumping_jack':
         double rightShoulder = _getAngle(angles, 'right_shoulder');
         double leftShoulder = _getAngle(angles, 'left_shoulder');
-        if (rightShoulder > 0 && leftShoulder > 0) {
-          double shoulderAngle = (rightShoulder + leftShoulder) / 2;
-          if (exerciseState == 'down' || shoulderAngle > thresholds['jumping_jack']!['down']!) {
-             if (shoulderAngle < thresholds['jumping_jack']!['up']!) {
-               addFeedback("Raise arms higher");
-             }
-          }
-          confidence = min(100, (shoulderAngle / thresholds['jumping_jack']!['up']!) * 100).round();
+        double shoulderAngle = (rightShoulder + leftShoulder) / 2;
+        
+        if (exerciseState == ExerciseState.middle) { // Arms up
+           if (shoulderAngle < thresholds['jumping_jack']!['up']!) {
+             addFeedback("Clap hands overhead");
+           }
+        } else if (exerciseState == ExerciseState.starting) { // Arms down
+           if (shoulderAngle > thresholds['jumping_jack']!['down']!) {
+             addFeedback("Arms all the way down");
+           }
         }
         break;
     }
 
     if (feedback.isEmpty) {
-      addFeedback("Form looks good!");
-      if (confidence == 0 && (exerciseState == 'up' || exerciseState == 'start')) confidence = 100;
+      addFeedback("Perfect form!");
+      confidence = 100;
+    } else {
+      // Reduce confidence based on number of errors
+      confidence = max(0, confidence - (feedback.length * 20));
     }
 
     return {'confidence': confidence, 'feedback': feedback};

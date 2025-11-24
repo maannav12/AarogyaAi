@@ -36,9 +36,14 @@ class MedicineDetailView extends StatelessWidget {
                         color: Colors.blue[900]),
                   ),
                   SizedBox(height: 20),
-                  _buildDetailCard("Usage / Indications", medicine.usageInfo),
-                  _buildDetailCard("Dosage Information", medicine.dosageInfo),
-                  _buildDetailCard("Side Effects / Warnings", medicine.warningInfo),
+                  // Show usage (which contains all info from API)
+                  if (medicine.usageInfo.isNotEmpty)
+                    _buildDetailCard("Medicine Information", medicine.usageInfo),
+                  // Only show these if they have content
+                  if (medicine.dosageInfo.isNotEmpty)
+                    _buildDetailCard("Dosage Information", medicine.dosageInfo),
+                  if (medicine.warningInfo.isNotEmpty)
+                    _buildDetailCard("Side Effects / Warnings", medicine.warningInfo),
                   SizedBox(height: 30),
                   Text(
                     "Disclaimer: Not a substitute for medical advice.",

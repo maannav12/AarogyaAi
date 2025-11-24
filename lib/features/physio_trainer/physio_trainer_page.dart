@@ -7,10 +7,16 @@ import 'widgets/skeleton_painter.dart';
 
 class PhysioTrainerPage extends GetView<PhysioTrainerController> {
   PhysioTrainerPage({super.key});
-  final PhysioTrainerController controller = Get.put(PhysioTrainerController());
 
   @override
   Widget build(BuildContext context) {
+    //Start camera when page is shown
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (controller.isCameraInitialized.value == false) {
+        controller.startCamera();
+      }
+    });
+    
     return Scaffold(
       backgroundColor: Colors.black, // Ensure black background
       appBar: AppBar(

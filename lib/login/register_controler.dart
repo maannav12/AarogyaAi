@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:aarogya/bottom/bottom_bar.dart';
 import 'package:aarogya/home/home_page.dart';
 import 'package:aarogya/login/login_screen.dart';
 import 'package:aarogya/utils/snack_bar_utils.dart';
@@ -9,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../models/user_profile_model.dart';
 
 class RegisterControler extends GetxController {
   final box = GetStorage();
@@ -78,45 +80,55 @@ class RegisterControler extends GetxController {
   }
 
   googleLogin() async {
-    const List<String> scopes = <String>[
-      'email',
-      'https://www.googleapis.com/auth/contacts.readonly',
-    ];
-    final GoogleSignIn signIn = GoogleSignIn.instance;
+    try {
+      final GoogleSignIn signIn = GoogleSignIn.instance;
+      
+      // Force sign out to ensure fresh login
+      await signIn.signOut();
 
-    await signIn.initialize(
-      serverClientId:
-          "120899676261-cef1prvtrseid9seo6do20uivrla8ach.apps.googleusercontent.com",
-    );
-    final GoogleSignInAccount? user = await signIn.authenticate(
-      scopeHint: scopes,
-    );
+      await signIn.initialize(
+        serverClientId:
+            "120899676261-cef1prvtrseid9seo6do20uivrla8ach.apps.googleusercontent.com",
+      );
 
-    print("==========================");
+      final GoogleSignInAccount? googleUser = await signIn.authenticate();
 
-    print(user?.displayName);
-    print(user?.photoUrl);
-    print(user?.email);
+      if (googleUser == null) return;
 
-    if (user == null) return;
-    await saveDetailsOnDB(user.id, {
-      "socialId": user.id,
-      "name": user.displayName,
-      "email": user.email,
-      "image": user.photoUrl,
-    });
-    Get.offAll(HomeScreen());
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
-    // await SPref().saveUserData(UserModel.fromJson(
-    //   {
-    //     "socialId": user.id,
-    //     "name": user.displayName,
-    //     "email": user.email,
-    //     "image": user.photoUrl,
-    //   }
-    // ));
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: null,
+        idToken: googleAuth.idToken,
+      );
 
-    // _navigateToLogin(Get.context);
+      UserCredential userCredential =
+          await auth.signInWithCredential(credential);
+      User? user = userCredential.user;
+
+      if (user != null) {
+        await saveDetailsOnDB(user.uid, {
+          "socialId": user.uid,
+          "name": user.displayName,
+          "email": user.email,
+          "image": user.photoURL,
+        });
+
+        // Save to local storage for ProfileController
+        final userProfile = UserProfile(name: user.displayName);
+        box.write('user_profile', userProfile.toJson());
+
+        Get.offAll(() => BottomBar());
+      }
+    } catch (e) {
+      print("Google Login Error: $e");
+      Get.snackbar(
+        "Login Failed",
+        "Error: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
   }
 
   Future<void> saveDetailsOnDB(

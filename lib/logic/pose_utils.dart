@@ -71,4 +71,53 @@ class PoseUtils {
       ),
     };
   }
+
+  static double calculatePoseConfidence(Pose pose, List<PoseLandmarkType> requiredLandmarks) {
+    if (requiredLandmarks.isEmpty) return 1.0;
+    
+    double totalLikelihood = 0;
+    for (var type in requiredLandmarks) {
+      final landmark = pose.landmarks[type];
+      if (landmark != null) {
+        totalLikelihood += landmark.likelihood;
+      }
+    }
+    return totalLikelihood / requiredLandmarks.length;
+  }
+
+  static List<String> checkBodyVisibility(Pose pose, List<PoseLandmarkType> requiredLandmarks) {
+    List<String> missing = [];
+    for (var type in requiredLandmarks) {
+      final landmark = pose.landmarks[type];
+      if (landmark == null || landmark.likelihood < 0.5) {
+        // Convert enum name to readable string (e.g., leftAnkle -> Left Ankle)
+        String name = type.toString().split('.').last;
+        // Simple camelCase to Title Case conversion
+        name = name.replaceAllMapped(RegExp(r'([A-Z])'), (match) => ' ${match.group(0)}');
+        name = name[0].toUpperCase() + name.substring(1);
+        missing.add(name);
+      }
+    }
+    return missing;
+  }
+
+  static bool isBodyVisible(Pose pose) {
+    // Check core landmarks: shoulders and hips
+    final coreLandmarks = [
+      PoseLandmarkType.leftShoulder,
+      PoseLandmarkType.rightShoulder,
+      PoseLandmarkType.leftHip,
+      PoseLandmarkType.rightHip,
+    ];
+    
+    int visibleCount = 0;
+    for (var type in coreLandmarks) {
+      if ((pose.landmarks[type]?.likelihood ?? 0) > 0.5) {
+        visibleCount++;
+      }
+    }
+    
+    // Return true if at least 3 of 4 core landmarks are visible
+    return visibleCount >= 3;
+  }
 }

@@ -70,7 +70,15 @@ class PhysioTrainerController extends GetxController {
   @override
   void onReady() {
     super.onReady();
-    _initializeCamera();
+    // Don't auto-start camera - wait for manual init
+    // _initializeCamera();
+  }
+  
+  // Call this when page becomes visible
+  Future<void> startCamera() async {
+    if (!isCameraInitialized.value) {
+      await _initializeCamera();
+    }
   }
 
   @override
@@ -255,11 +263,45 @@ class PhysioTrainerController extends GetxController {
             final pose = detectedPoses.first;
             final angles = PoseUtils.calculateAllAngles(pose);
 
-            // Get form feedback
+            // Define required landmarks based on exercise
+            List<PoseLandmarkType> requiredLandmarks = [];
+            switch (currentExercise.value) {
+              case 'squat':
+              case 'tree_pose':
+                requiredLandmarks = [
+                  PoseLandmarkType.leftHip, PoseLandmarkType.rightHip,
+                  PoseLandmarkType.leftKnee, PoseLandmarkType.rightKnee,
+                  PoseLandmarkType.leftAnkle, PoseLandmarkType.rightAnkle
+                ];
+                break;
+              case 'pushup':
+                requiredLandmarks = [
+                  PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder,
+                  PoseLandmarkType.leftElbow, PoseLandmarkType.rightElbow,
+                  PoseLandmarkType.leftHip, PoseLandmarkType.rightHip
+                ];
+                break;
+              case 'jumping_jack':
+                requiredLandmarks = [
+                  PoseLandmarkType.leftShoulder, PoseLandmarkType.rightShoulder,
+                  PoseLandmarkType.leftElbow, PoseLandmarkType.rightElbow,
+                  PoseLandmarkType.leftWrist, PoseLandmarkType.rightWrist
+                ];
+                break;
+            }
+
+            // Calculate confidence and visibility
+            double poseConfidence = PoseUtils.calculatePoseConfidence(pose, requiredLandmarks);
+            List<String> missingLandmarks = PoseUtils.checkBodyVisibility(pose, requiredLandmarks);
+
+            // Get form feedback with new parameters
             final feedbackResult = exerciseLogic.getFormFeedback(
               currentExercise.value,
               angles,
+              poseConfidence,
+              missingLandmarks,
             );
+            
             formScore.value = feedbackResult['confidence'] as int;
             List<String> feedbackMessages = feedbackResult['feedback'] as List<String>;
             
@@ -267,16 +309,18 @@ class PhysioTrainerController extends GetxController {
               feedbackText.value = feedbackMessages.join('\n');
             }
 
-            // Count reps
-            bool repCompleted = exerciseLogic.countReps(
-              currentExercise.value,
-              angles,
-            );
-            repCount.value = exerciseLogic.repCount;
+            // Count reps only if visible and confident
+            if (missingLandmarks.isEmpty && poseConfidence > 0.6) {
+              bool repCompleted = exerciseLogic.countReps(
+                currentExercise.value,
+                angles,
+              );
+              repCount.value = exerciseLogic.repCount;
 
-            // Announce rep completion (non-blocking)
-            if (repCompleted) {
-              flutterTts.speak("Rep ${repCount.value}").catchError((_) {});
+              // Announce rep completion (non-blocking)
+              if (repCompleted) {
+                flutterTts.speak("Rep ${repCount.value}").catchError((_) {});
+              }
             }
           } else {
             // Only update feedback if it's been a while since last update to avoid flickering

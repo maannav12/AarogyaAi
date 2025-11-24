@@ -1,16 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:percent_indicator/percent_indicator.dart'; // ✅ new import
-
+import 'package:image_picker/image_picker.dart';
+import 'package:percent_indicator/percent_indicator.dart';
 import 'medicin_controler.dart';
 
-class MedicineScanView extends StatelessWidget {
-  final MedicineController controller = Get.put(MedicineController());
+class MedicineScanView extends GetView<MedicineController> {
+  const MedicineScanView({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text("Medicine Analyzer"),
         centerTitle: true,
@@ -30,17 +30,26 @@ class MedicineScanView extends StatelessWidget {
                 decoration: BoxDecoration(
                   border: Border.all(color: Colors.tealAccent, width: 2),
                   borderRadius: BorderRadius.circular(16),
-                  color: Colors.transparent,
+                  color: Colors.grey[100],
                 ),
-                child: const Center(
-                  child: Text(
-                    "Align medicine label",
-                    style: TextStyle(
-                      color: Colors.teal,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
-                  ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: controller.currentImagePath.value.isEmpty
+                      ? const Center(
+                          child: Text(
+                            "Tap camera or gallery\nto select medicine",
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: Colors.teal,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        )
+                      : Image.file(
+                          File(controller.currentImagePath.value),
+                          fit: BoxFit.cover,
+                        ),
                 ),
               ),
 
@@ -53,7 +62,7 @@ class MedicineScanView extends StatelessWidget {
                     children: [
                       // Camera Button
                       InkWell(
-                        onTap: controller.scanAndAnalyze,
+                        onTap: () => controller.scanAndAnalyze(ImageSource.camera),
                         borderRadius: BorderRadius.circular(50),
                         child: Container(
                           width: 80,
@@ -70,11 +79,9 @@ class MedicineScanView extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 20),
-                      // Gallery Button (future use)
+                      // Gallery Button
                       InkWell(
-                        onTap: () {
-                          // TODO: Implement gallery import if needed
-                        },
+                        onTap: () => controller.scanAndAnalyze(ImageSource.gallery),
                         borderRadius: BorderRadius.circular(50),
                         child: Container(
                           width: 65,
@@ -91,6 +98,7 @@ class MedicineScanView extends StatelessWidget {
                           ),
                         ),
                       ),
+
                     ],
                   ),
 
