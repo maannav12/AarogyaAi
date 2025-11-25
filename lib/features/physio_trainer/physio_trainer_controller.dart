@@ -10,12 +10,15 @@ import 'package:aarogya/logic/exercise_logic.dart';
 import 'package:aarogya/logic/pose_utils.dart';
 import 'package:flutter/services.dart';
 import 'dart:typed_data';
+import '../../services/user_health_service.dart';
 
 class PhysioTrainerController extends GetxController {
   CameraController? cameraController;
   late PoseDetector poseDetector;
   late ExerciseLogic exerciseLogic;
+
   late FlutterTts flutterTts;
+  final UserHealthService _healthService = Get.find<UserHealthService>();
 
   final RxBool isCameraInitialized = false.obs;
   bool isDetectingPoses = false;
@@ -504,6 +507,18 @@ class PhysioTrainerController extends GetxController {
     repCount.value = 0;
     formScore.value = 100;
     feedbackText.value = "Reset. Ready for ${currentExercise.value.replaceAll('_', ' ')}";
+  }
+
+  Future<void> saveWorkoutSession() async {
+    if (repCount.value > 0) {
+      await _healthService.saveWorkout(
+        exerciseName: currentExercise.value,
+        reps: repCount.value,
+        durationSeconds: 0, // TODO: Track duration
+        score: formScore.value,
+      );
+      Get.snackbar('Workout Saved', 'Great job! Your session has been recorded.');
+    }
   }
 
   Size get imageSize => _imageSize ?? Size(720, 1280);

@@ -102,4 +102,12 @@ class TfliteService {
     print("✅ Prediction: $predictedClass, Confidence: $confidence%");
     return {predictedClass: confidence};
   }
+
+  // Dispose resources
+  void dispose() {
+    if (_interpreter != null) {
+      _interpreter!.close();
+      _interpreter = null;
+    }
+  }
 }

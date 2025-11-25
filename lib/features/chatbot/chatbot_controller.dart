@@ -11,8 +11,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import '../../services/user_health_service.dart';
 
 class ChatbotController extends GetxController {
+  final UserHealthService _healthService = Get.find<UserHealthService>();
   final RxList<ChatMessage> messages = <ChatMessage>[].obs;
   final RxBool isTyping = false.obs;
   final RxBool isListening = false.obs;
@@ -28,8 +31,9 @@ class ChatbotController extends GetxController {
   final ImagePicker _picker = ImagePicker();
 
   // API Keys
-  static const String _geminiApiKey = 'AIzaSyCBg6FVludMe4xtjDhCMynO2L7mSwS4dwc';
-  static const String _googleCloudTtsApiKey = 'AIzaSyCBg6FVludMe4xtjDhCMynO2L7mSwS4dwc'; // Use same key
+  // API Keys
+  static String get _geminiApiKey => dotenv.env['GEMINI_API_KEY'] ?? '';
+  static String get _googleCloudTtsApiKey => dotenv.env['GOOGLE_CLOUD_TTS_API_KEY'] ?? '';
 
   final ChatUser currentUser = ChatUser(
     id: '1',
@@ -71,7 +75,8 @@ class ChatbotController extends GetxController {
           "3. ⚠️ **Concerns**: Clearly flag any critical issues. "
           "4. 💡 **Interpretation**: Explain what these results mean for the patient's health in simple terms. "
           "5. 🩺 **Advice**: Suggest next steps, lifestyle changes, or immediate medical attention if needed. "
-          "Always clarify you are an AI. If there is a medical emergency, advise calling emergency services immediately."),
+          "Always clarify you are an AI. If there is a medical emergency, advise calling emergency services immediately.\n\n"
+          "User Profile Context:\n${_healthService.userProfile.value.getProfileSummary()}"),
     ]);
   }
 
@@ -157,6 +162,9 @@ class ChatbotController extends GetxController {
         );
         messages.insert(0, botMessage);
         
+        // Save chat interaction
+        _healthService.saveChatInteraction(chatMessage.text, text);
+        
         // Speak ONLY if it's not a report analysis
         if (!isReportAnalysis) {
           await _speakWithGoogleTts(text);
@@ -169,7 +177,7 @@ class ChatbotController extends GetxController {
         ChatMessage(
           user: geminiUser,
           createdAt: DateTime.now(),
-          text: "I'm sorry, I encountered an error. Please try again.",
+          text: "I'm sorry, I encountered an error. Please try again. Error: $e",
         ),
       );
     } finally {

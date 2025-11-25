@@ -74,7 +74,22 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle: 'Log and track your vital signs',
                     icon: Icons.monitor_heart_outlined,
                     color: Colors.blue,
-                  ),                ],
+                  ),
+                  const SizedBox(height: 12),
+                  InkWell(
+                    onTap: () {
+                      // Navigate to Agent Test Page
+                      Get.toNamed('/agent-test') ?? 
+                      Get.snackbar('Info', 'Add AgentTestPage route to test agents');
+                    },
+                    child: _buildActionCard(
+                      title: '🤖 AI Agent Test',
+                      subtitle: 'Test the multi-agent AI system',
+                      icon: Icons.psychology,
+                      color: Colors.deepPurple,
+                    ),
+                  ),
+                ],
               ),
             ),
 

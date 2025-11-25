@@ -9,11 +9,35 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:get/route_manager.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// Import agent system
+import 'package:aarogya/agents/agent_system_manager.dart';
+import 'package:aarogya/features/agent_test/agent_test_page.dart';
+import 'package:aarogya/services/user_health_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await GetStorage.init();
+  
+  // Initialize User Health Service
+  await Get.putAsync(() => UserHealthService().init());
+  
+  // Initialize AI Agent System
+  // TODO: Replace with your actual Gemini API key from environment or config
+  try {
+    await dotenv.load(fileName: ".env");
+    final agentSystem = AgentSystemManager.getInstance(
+      geminiApiKey: dotenv.env['AGENT_SYSTEM_KEY'] ?? '',
+    );
+    await agentSystem.initialize();
+    print('✅ Agent System Initialized Successfully');
+  } catch (e) {
+    print('❌ Agent System Initialization Failed: $e');
+    print('ℹ️  App will run but agent features will be disabled');
+  }
+  
   runApp(MyApp());
 }
 
@@ -24,26 +48,20 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GetMaterialApp(
-      title: 'Flutter Demo',
+      title: 'AarogyaAi',
       theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       debugShowCheckedModeBanner: false,
+      
+      // Add named route for agent test page
+      getPages: [
+        GetPage(
+          name: '/agent-test',
+          page: () => const AgentTestPage(),
+        ),
+      ],
+      
       home: SplaceScreen(),
    
             // home: MedicineAnalyzer(),

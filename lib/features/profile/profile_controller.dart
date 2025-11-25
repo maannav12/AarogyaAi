@@ -1,10 +1,9 @@
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import '../../models/user_profile_model.dart';
+import '../../services/user_health_service.dart';
 
 class ProfileController extends GetxController {
-  final storage = GetStorage();
-  static const String _profileKey = 'user_profile';
+  final UserHealthService _healthService = Get.find<UserHealthService>();
 
   final Rx<UserProfile> profile = UserProfile().obs;
   final RxBool isEditing = false.obs;
@@ -12,18 +11,17 @@ class ProfileController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    loadProfile();
-  }
-
-  void loadProfile() {
-    final data = storage.read(_profileKey);
-    if (data != null) {
-      profile.value = UserProfile.fromJson(Map<String, dynamic>.from(data));
-    }
+    // Sync with service profile
+    profile.value = _healthService.userProfile.value;
+    
+    // Listen for changes
+    ever(_healthService.userProfile, (UserProfile p) {
+      profile.value = p;
+    });
   }
 
   Future<void> saveProfile() async {
-    await storage.write(_profileKey, profile.value.toJson());
+    await _healthService.saveProfile(profile.value);
     Get.snackbar(
       'Success',
       'Profile saved successfully',
