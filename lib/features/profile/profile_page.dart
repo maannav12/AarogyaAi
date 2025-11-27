@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:aarogya/utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:aarogya/login/login_controler.dart';
@@ -13,63 +14,95 @@ class ProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text('My Health Profile'),
+        title: const Text(
+          'My Health Profile',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
           Obx(() => IconButton(
                 icon: Icon(controller.isEditing.value ? Icons.close : Icons.edit),
                 onPressed: controller.toggleEdit,
               )),
           IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              loginController.logout();
-            },
-            tooltip: 'Logout',
+            icon: const Icon(Icons.share),
+            onPressed: () {},
+            tooltip: 'Share Profile',
           ),
         ],
       ),
-      body: Obx(
-        () => SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              _buildPersonalInfoCard(),
-              const SizedBox(height: 16),
-              _buildVitalsCard(),
-              const SizedBox(height: 16),
-              _buildMedicalHistoryCard(),
-              const SizedBox(height: 16),
-              _buildEmergencyContactCard(),
-              const SizedBox(height: 24),
-              if (controller.isEditing.value)
-                ElevatedButton.icon(
-                  onPressed: controller.saveProfile,
-                  icon: const Icon(Icons.save),
-                  label: const Text('Save Profile'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                ),
-            ],
+      body: Stack(
+        children: [
+          // Background Gradient
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color(0xFFE0F2F1), // Light Teal
+                  AppTheme.backgroundColor,
+                ],
+              ),
+            ),
           ),
-        ),
+          
+          Obx(
+            () => SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildPersonalInfoCard(),
+                  const SizedBox(height: 16),
+                  _buildVitalsCard(),
+                  const SizedBox(height: 16),
+                  _buildMedicalHistoryCard(),
+                  const SizedBox(height: 16),
+                  _buildEmergencyContactCard(),
+                  const SizedBox(height: 24),
+                  if (controller.isEditing.value)
+                    ElevatedButton.icon(
+                      onPressed: controller.saveProfile,
+                      icon: const Icon(Icons.save),
+                      label: const Text('Save Profile'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primaryColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 32),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildPersonalInfoCard() {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -77,15 +110,22 @@ class ProfilePage extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.person, color: Colors.teal, size: 28),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primaryColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.person, color: AppTheme.primaryColor, size: 24),
+                ),
                 const SizedBox(width: 12),
                 const Text(
                   'Personal Information',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.onBackgroundColor),
                 ),
               ],
             ),
-            const Divider(height: 24),
+            const Divider(height: 32, color: Colors.grey),
             _buildTextField(
               label: 'Full Name',
               value: controller.profile.value.name,
@@ -132,8 +172,10 @@ class ProfilePage extends StatelessWidget {
 
   Widget _buildVitalsCard() {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -141,15 +183,22 @@ class ProfilePage extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.monitor_heart, color: Colors.red, size: 28),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.monitor_heart, color: Colors.red, size: 24),
+                ),
                 const SizedBox(width: 12),
                 const Text(
                   'Vitals',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.onBackgroundColor),
                 ),
               ],
             ),
-            const Divider(height: 24),
+            const Divider(height: 32, color: Colors.grey),
             Row(
               children: [
                 Expanded(
@@ -222,8 +271,10 @@ class ProfilePage extends StatelessWidget {
 
   Widget _buildMedicalHistoryCard() {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -231,15 +282,22 @@ class ProfilePage extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.medical_services, color: Colors.blue, size: 28),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.medical_services, color: Colors.blue, size: 24),
+                ),
                 const SizedBox(width: 12),
                 const Text(
                   'Medical History',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.onBackgroundColor),
                 ),
               ],
             ),
-            const Divider(height: 24),
+            const Divider(height: 32, color: Colors.grey),
             _buildChipList(
               title: 'Allergies',
               items: controller.profile.value.allergies ?? [],
@@ -279,8 +337,10 @@ class ProfilePage extends StatelessWidget {
 
   Widget _buildEmergencyContactCard() {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.1),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
@@ -288,15 +348,22 @@ class ProfilePage extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(Icons.emergency, color: Colors.red, size: 28),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.emergency, color: Colors.red, size: 24),
+                ),
                 const SizedBox(width: 12),
                 const Text(
                   'Emergency Contact',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppTheme.onBackgroundColor),
                 ),
               ],
             ),
-            const Divider(height: 24),
+            const Divider(height: 32, color: Colors.grey),
             _buildTextField(
               label: 'Contact Name',
               value: controller.profile.value.emergencyContactName,
@@ -331,7 +398,8 @@ class ProfilePage extends StatelessWidget {
       onChanged: onChanged,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.teal),
+        labelStyle: TextStyle(color: Colors.grey.shade600),
+        prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -341,7 +409,7 @@ class ProfilePage extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.teal, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -349,6 +417,7 @@ class ProfilePage extends StatelessWidget {
         ),
         filled: true,
         fillColor: controller.isEditing.value ? Colors.white : Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       ),
     );
   }
@@ -362,11 +431,20 @@ class ProfilePage extends StatelessWidget {
   }) {
     return DropdownButtonFormField<String>(
       value: value,
-      items: items.map((item) => DropdownMenuItem(value: item, child: Text(item))).toList(),
+      isExpanded: true, // Ensures dropdown expands to fit container
+      items: items.map((item) => DropdownMenuItem(
+        value: item, 
+        child: Text(
+          item,
+          overflow: TextOverflow.ellipsis, // Prevent text overflow
+          style: const TextStyle(fontSize: 14),
+        ),
+      )).toList(),
       onChanged: controller.isEditing.value ? (val) => val != null ? onChanged(val) : null : null,
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, color: Colors.teal),
+        labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+        prefixIcon: Icon(icon, color: AppTheme.primaryColor, size: 20),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
         ),
@@ -376,7 +454,7 @@ class ProfilePage extends StatelessWidget {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.teal, width: 2),
+          borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
         ),
         disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -384,7 +462,10 @@ class ProfilePage extends StatelessWidget {
         ),
         filled: true,
         fillColor: controller.isEditing.value ? Colors.white : Colors.grey.shade50,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       ),
+      style: const TextStyle(fontSize: 14, color: AppTheme.onBackgroundColor),
+      icon: const Icon(Icons.arrow_drop_down, size: 20),
     );
   }
 
@@ -403,7 +484,7 @@ class ProfilePage extends StatelessWidget {
           children: [
             Text(
               title,
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppTheme.onBackgroundColor),
             ),
             if (controller.isEditing.value)
               IconButton(
@@ -416,7 +497,7 @@ class ProfilePage extends StatelessWidget {
         if (items.isEmpty)
           Text(
             'No $title added',
-            style: TextStyle(color: Colors.grey.shade500, fontStyle: FontStyle.italic),
+            style: TextStyle(color: Colors.grey.shade500, fontStyle: FontStyle.italic, fontSize: 14),
           )
         else
           Wrap(
@@ -426,9 +507,13 @@ class ProfilePage extends StatelessWidget {
               return Chip(
                 label: Text(item),
                 backgroundColor: color.withOpacity(0.1),
-                labelStyle: TextStyle(color: color),
+                labelStyle: TextStyle(color: color, fontWeight: FontWeight.w500),
                 deleteIcon: controller.isEditing.value ? const Icon(Icons.close, size: 18) : null,
                 onDeleted: controller.isEditing.value ? () => onRemove(item) : null,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(color: color.withOpacity(0.3)),
+                ),
               );
             }).toList(),
           ),
@@ -440,18 +525,25 @@ class ProfilePage extends StatelessWidget {
     final textController = TextEditingController();
     Get.dialog(
       AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Text('Add $title'),
         content: TextField(
           controller: textController,
           decoration: InputDecoration(
             hintText: 'Enter $title',
-            border: const OutlineInputBorder(),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
+            ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(),
-            child: const Text('Cancel'),
+            child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
           ElevatedButton(
             onPressed: () {
@@ -460,6 +552,10 @@ class ProfilePage extends StatelessWidget {
                 Get.back();
               }
             },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.primaryColor,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+            ),
             child: const Text('Add'),
           ),
         ],

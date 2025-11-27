@@ -1,8 +1,9 @@
 import 'dart:ui';
-import 'package:aarogya/bottom/bottom_bar.dart';
 import 'package:aarogya/login/forgot_screen.dart';
 import 'package:aarogya/login/login_controler.dart';
 import 'package:aarogya/login/register_page.dart';
+import 'package:aarogya/utils/app_theme.dart';
+import 'package:aarogya/utils/glass_container.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -62,9 +63,9 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Color(0xFF4A00E0), // Deep Purple
-                  Color(0xFF8E2DE2), // Purple
-                  Color(0xFF00C6FF), // Light Blue
+                  AppTheme.primaryColor,
+                  AppTheme.secondaryColor,
+                  Color(0xFFE0F7FA), // Light Cyan
                 ],
               ),
             ),
@@ -90,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.2),
+                                color: Colors.black.withOpacity(0.1),
                                 blurRadius: 20,
                                 offset: const Offset(0, 10),
                               ),
@@ -105,95 +106,82 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                     // Glass Container
                     FadeTransition(
                       opacity: _fadeAnimation,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(20),
-                        child: BackdropFilter(
-                          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-                          child: Container(
-                            padding: const EdgeInsets.all(32),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withOpacity(0.2),
+                      child: GlassContainer(
+                        padding: const EdgeInsets.all(32),
+                        child: Form(
+                          key: controller.formkey,
+                          child: Column(
+                            children: [
+                              const Text(
+                                "Welcome Back",
+                                style: TextStyle(
+                                  fontSize: 32,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.primaryColor,
+                                  letterSpacing: 1.2,
+                                ),
                               ),
-                            ),
-                            child: Form(
-                              key: controller.formkey,
-                              child: Column(
-                                children: [
-                                  const Text(
-                                    "Welcome Back",
+                              const SizedBox(height: 8),
+                              Text(
+                                "Sign in to continue",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: AppTheme.onBackgroundColor.withOpacity(0.7),
+                                ),
+                              ),
+                              const SizedBox(height: 40),
+
+                              // Email Field
+                              _buildTextField(
+                                controller: controller.emailcontroller,
+                                hint: "Email",
+                                icon: Icons.email_outlined,
+                              ),
+                              const SizedBox(height: 20),
+
+                              // Password Field
+                              _buildTextField(
+                                controller: controller.passwordcontroller,
+                                hint: "Password",
+                                icon: Icons.lock_outline,
+                                isPassword: true,
+                                validator: (value) {
+                                  if (value == null || value.length < 8) {
+                                    return "Password must be at least 8 characters";
+                                  }
+                                  return null;
+                                },
+                              ),
+                              const SizedBox(height: 30),
+
+                              // Login Button
+                              SizedBox(
+                                width: double.infinity,
+                                height: 55,
+                                child: ElevatedButton(
+                                  onPressed: () {
+                                    if (controller.onlogin() == true) return;
+                                    controller.login();
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: AppTheme.primaryColor,
+                                    foregroundColor: Colors.white,
+                                    elevation: 5,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    "LOGIN",
                                     style: TextStyle(
-                                      fontSize: 32,
+                                      fontSize: 18,
                                       fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                      letterSpacing: 1.2,
+                                      letterSpacing: 1.5,
                                     ),
                                   ),
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    "Sign in to continue",
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: Colors.white.withOpacity(0.8),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 40),
-
-                                  // Email Field
-                                  _buildTextField(
-                                    controller: controller.emailcontroller,
-                                    hint: "Email",
-                                    icon: Icons.email_outlined,
-                                  ),
-                                  const SizedBox(height: 20),
-
-                                  // Password Field
-                                  _buildTextField(
-                                    controller: controller.passwordcontroller,
-                                    hint: "Password",
-                                    icon: Icons.lock_outline,
-                                    isPassword: true,
-                                    validator: (value) {
-                                      if (value == null || value.length < 8) {
-                                        return "Password must be at least 8 characters";
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                  const SizedBox(height: 30),
-
-                                  // Login Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    height: 55,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        if (controller.onlogin() == true) return;
-                                        controller.login();
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.white,
-                                        foregroundColor: const Color(0xFF4A00E0),
-                                        elevation: 5,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(15),
-                                        ),
-                                      ),
-                                      child: const Text(
-                                        "LOGIN",
-                                        style: TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 1.5,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                         ),
                       ),
@@ -220,7 +208,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 16,
-                                fontWeight: FontWeight.w500,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
                           ),
@@ -231,7 +219,7 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
                               Text(
                                 "Don't have an account? ",
                                 style: TextStyle(
-                                  color: Colors.white.withOpacity(0.8),
+                                  color: Colors.white.withOpacity(0.9),
                                   fontSize: 16,
                                 ),
                               ),
@@ -272,22 +260,22 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
+        color: Colors.white.withOpacity(0.8),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(color: Colors.white.withOpacity(0.2)),
+        border: Border.all(color: AppTheme.primaryColor.withOpacity(0.2)),
       ),
       child: TextFormField(
         controller: controller,
         obscureText: isPassword,
         validator: validator,
-        style: const TextStyle(color: Colors.white),
+        style: const TextStyle(color: AppTheme.onBackgroundColor),
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.white.withOpacity(0.8)),
+          prefixIcon: Icon(icon, color: AppTheme.primaryColor),
           hintText: hint,
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+          hintStyle: TextStyle(color: AppTheme.onBackgroundColor.withOpacity(0.5)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-          errorStyle: const TextStyle(color: Colors.orangeAccent),
+          errorStyle: const TextStyle(color: AppTheme.errorColor),
         ),
       ),
     );
@@ -305,11 +293,11 @@ class _LoginScreenState extends State<LoginScreen> with SingleTickerProviderStat
       child: OutlinedButton(
         onPressed: onPressed,
         style: OutlinedButton.styleFrom(
-          side: BorderSide(color: Colors.white.withOpacity(0.5), width: 1.5),
+          side: const BorderSide(color: Colors.white, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(15),
           ),
-          backgroundColor: Colors.white.withOpacity(0.05),
+          backgroundColor: Colors.white.withOpacity(0.1),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,

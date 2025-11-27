@@ -7,6 +7,7 @@ import 'package:aarogya/medicine/medicine_analyzer.dart';
 import 'package:aarogya/medicine/medicine_binding.dart';
 import 'package:aarogya/medicine/medicin_controler.dart';
 import 'package:aarogya/features/mri_scan_page.dart';
+import 'package:aarogya/utils/app_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:animated_botton_navigation/animated_botton_navigation.dart';
 import 'package:get/get.dart';
@@ -29,8 +30,8 @@ class _BottomBarState extends State<BottomBar> {
   }
 
   final List<Widget> _pages = [
-    Center(child: HomeScreen()),
-    Center(child: MedicineScanView()),
+    const HomeScreen(),
+    const MedicineScanView(),
     PhysioTrainerPage(),
     const MriScanPage(),
   ];
@@ -38,35 +39,23 @@ class _BottomBarState extends State<BottomBar> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('AarogyaAI'),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.account_circle, size: 28),
-            onPressed: () => Get.to(() => ProfilePage()),
-            tooltip: 'My Profile',
-          ),
-        ],
-      ),
+      extendBody: true, // Allow body to extend behind the bottom bar
       body: _pages[_currentIndex],
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Get.to(() => ChatbotPage());
         },
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: AppTheme.primaryColor,
         child: const Icon(Icons.chat_bubble_outline, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: AnimatedBottomNavigation(
         height: 70,
         indicatorSpaceBotton: 25,
-        icons: [
+        icons: const [
           Icons.home,
           Icons.medical_services_outlined,
-          Icons.person,
+          Icons.fitness_center, // Changed icon for Physio
           Icons.document_scanner_outlined,
         ],
         currentIndex: _currentIndex,
@@ -75,6 +64,11 @@ class _BottomBarState extends State<BottomBar> {
             _currentIndex = index;
           });
         },
+        backgroundColor: Colors.white,
+
+        // indicatorColor: AppTheme.primaryColor, // Removed invalid parameter
+        // iconColor: Colors.grey, // Removed invalid parameter
+        // activeIconColor: AppTheme.primaryColor, // Removed invalid parameter
       ),
     );
   }

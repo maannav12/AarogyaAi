@@ -171,13 +171,45 @@ class ChatbotController extends GetxController {
         }
       }
     } catch (e) {
-      Get.snackbar("Error", "Failed to get response: $e");
+      String errorMessage = "I'm sorry, I encountered an error. Please try again.";
+      
+      // Check for specific error types
+      if (e.toString().contains('Resource exhausted') || 
+          e.toString().contains('429') ||
+          e.toString().contains('quota')) {
+        errorMessage = "⚠️ API quota limit reached. This usually means:\n\n"
+                      "1. You're using a free API key with daily limits\n"
+                      "2. Too many requests in a short time\n\n"
+                      "💡 Solutions:\n"
+                      "• Wait a few minutes and try again\n"
+                      "• Check if your API key is valid at https://aistudio.google.com/apikey\n"
+                      "• Consider upgrading to a paid plan for higher limits";
+      } else if (e.toString().contains('API key') || 
+                 e.toString().contains('leaked') ||
+                 e.toString().contains('invalid')) {
+        errorMessage = "🔑 API Key Error!\n\n"
+                      "Your API key appears to be invalid or has been blocked.\n\n"
+                      "Please:\n"
+                      "1. Go to https://aistudio.google.com/apikey\n"
+                      "2. Create a NEW API key\n"
+                      "3. Update it in the .env file\n"
+                      "4. Restart the app";
+      }
+      
+      Get.snackbar(
+        "Error", 
+        errorMessage,
+        duration: const Duration(seconds: 10),
+        backgroundColor: Colors.red.shade50,
+        colorText: Colors.red.shade900,
+      );
+      
       messages.insert(
         0,
         ChatMessage(
           user: geminiUser,
           createdAt: DateTime.now(),
-          text: "I'm sorry, I encountered an error. Please try again. Error: $e",
+          text: errorMessage,
         ),
       );
     } finally {

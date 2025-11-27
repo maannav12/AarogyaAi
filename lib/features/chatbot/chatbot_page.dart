@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:aarogya/features/chatbot/chatbot_controller.dart';
+import 'package:aarogya/utils/app_theme.dart';
 import 'package:dash_chat_2/dash_chat_2.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,16 +14,42 @@ class ChatbotPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
-        title: const Text("Dr. AI Assistant"),
+        title: const Text(
+          "Dr. AI Assistant",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+        backgroundColor: Colors.transparent,
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [AppTheme.primaryColor, AppTheme.secondaryColor],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
       body: Obx(
         () => Stack(
           children: [
+            // Background
+            Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Color(0xFFE0F2F1), // Light Teal
+                    AppTheme.backgroundColor,
+                  ],
+                ),
+              ),
+            ),
+            
             DashChat(
               currentUser: controller.currentUser,
               onSend: controller.sendMessage,
@@ -30,10 +57,11 @@ class ChatbotPage extends StatelessWidget {
               typingUsers: controller.isTyping.value ? [controller.geminiUser] : [],
               inputOptions: InputOptions(
                 alwaysShowSend: true,
+                sendOnEnter: true,
                 leading: [
                   IconButton(
                     onPressed: () => _showAttachmentOptions(context),
-                    icon: const Icon(Icons.attach_file, color: Colors.blue),
+                    icon: const Icon(Icons.add_circle_outline, color: AppTheme.primaryColor, size: 28),
                   ),
                 ],
                 trailing: [
@@ -41,37 +69,88 @@ class ChatbotPage extends StatelessWidget {
                     onPressed: controller.isListening.value
                         ? controller.stopListening
                         : controller.startListening,
-                    icon: Icon(
-                      controller.isListening.value ? Icons.mic : Icons.mic_none,
-                      color: controller.isListening.value ? Colors.red : Colors.blue,
+                    icon: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: controller.isListening.value ? Colors.redAccent : Colors.transparent,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        controller.isListening.value ? Icons.mic : Icons.mic_none,
+                        color: controller.isListening.value ? Colors.white : AppTheme.primaryColor,
+                        size: 24,
+                      ),
                     ),
                   ),
                 ],
                 inputDecoration: InputDecoration(
-                  hintText: "Ask me anything...",
+                  hintText: "Ask Dr. AI...",
+                  hintStyle: TextStyle(color: Colors.grey[500]),
                   filled: true,
-                  fillColor: Colors.grey[100]!,
+                  fillColor: Colors.white,
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(25),
+                    borderRadius: BorderRadius.circular(30),
                     borderSide: BorderSide.none,
                   ),
                   contentPadding: const EdgeInsets.symmetric(
                     horizontal: 20,
-                    vertical: 10,
+                    vertical: 12,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: const BorderSide(color: AppTheme.primaryColor, width: 2),
                   ),
                 ),
               ),
               messageOptions: MessageOptions(
-                currentUserContainerColor: Colors.blueAccent,
+                currentUserContainerColor: AppTheme.primaryColor,
                 currentUserTextColor: Colors.white,
-                containerColor: Colors.grey[200]!,
-                textColor: Colors.black,
+                containerColor: Colors.white,
+                textColor: Colors.black87,
+                showOtherUsersAvatar: true,
+                showCurrentUserAvatar: false,
                 avatarBuilder: (user, onPress, onLongPress) {
+                  if (user.profileImage != null) {
+                    return Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: CircleAvatar(
+                        backgroundImage: NetworkImage(user.profileImage!),
+                        backgroundColor: Colors.white,
+                      ),
+                    );
+                  }
                   return Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: CircleAvatar(
-                      backgroundImage: NetworkImage(user.profileImage!),
+                      backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                      child: Text(
+                        user.firstName?[0] ?? '?',
+                        style: const TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.bold),
+                      ),
                     ),
+                  );
+                },
+                messageDecorationBuilder: (message, previousMessage, nextMessage) {
+                  bool isCurrentUser = message.user.id == controller.currentUser.id;
+                  return BoxDecoration(
+                    color: isCurrentUser ? AppTheme.primaryColor : Colors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: const Radius.circular(20),
+                      topRight: const Radius.circular(20),
+                      bottomLeft: isCurrentUser ? const Radius.circular(20) : const Radius.circular(0),
+                      bottomRight: isCurrentUser ? const Radius.circular(0) : const Radius.circular(20),
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 5,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   );
                 },
               ),
@@ -88,20 +167,34 @@ class ChatbotPage extends StatelessWidget {
                       width: 100,
                       height: 100,
                       decoration: BoxDecoration(
-                        border: Border.all(color: Colors.blue, width: 2),
-                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppTheme.primaryColor, width: 3),
+                        borderRadius: BorderRadius.circular(16),
                         image: DecorationImage(
                           image: FileImage(File(controller.selectedImage.value!.path)),
                           fit: BoxFit.cover,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
                     ),
                     Positioned(
-                      top: -10,
-                      right: -10,
-                      child: IconButton(
-                        onPressed: controller.clearImage,
-                        icon: const Icon(Icons.close, color: Colors.red),
+                      top: -8,
+                      right: -8,
+                      child: GestureDetector(
+                        onTap: controller.clearImage,
+                        child: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.close, color: Colors.white, size: 18),
+                        ),
                       ),
                     ),
                   ],
@@ -116,27 +209,85 @@ class ChatbotPage extends StatelessWidget {
   void _showAttachmentOptions(BuildContext context) {
     showModalBottomSheet(
       context: context,
-      builder: (context) => SafeArea(
-        child: Wrap(
-          children: [
-            ListTile(
-              leading: const Icon(Icons.photo_library),
-              title: const Text('Gallery'),
-              onTap: () {
-                controller.pickImage(ImageSource.gallery);
-                Navigator.pop(context);
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.camera_alt),
-              title: const Text('Camera'),
-              onTap: () {
-                controller.pickImage(ImageSource.camera);
-                Navigator.pop(context);
-              },
-            ),
-          ],
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  'Attach Image',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.onBackgroundColor,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildSourceOption(
+                      context,
+                      icon: Icons.photo_library,
+                      label: 'Gallery',
+                      onTap: () {
+                        controller.pickImage(ImageSource.gallery);
+                        Navigator.pop(context);
+                      },
+                    ),
+                    _buildSourceOption(
+                      context,
+                      icon: Icons.camera_alt,
+                      label: 'Camera',
+                      onTap: () {
+                        controller.pickImage(ImageSource.camera);
+                        Navigator.pop(context);
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSourceOption(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppTheme.primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 32, color: AppTheme.primaryColor),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              color: AppTheme.onBackgroundColor,
+            ),
+          ),
+        ],
       ),
     );
   }

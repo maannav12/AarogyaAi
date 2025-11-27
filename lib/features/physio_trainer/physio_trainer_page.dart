@@ -243,7 +243,7 @@ class PhysioTrainerPage extends GetView<PhysioTrainerController> {
 
             // Control Buttons (Bottom)
             Positioned(
-              bottom: 20,
+              bottom: 90, // Increased padding to prevent overlap with bottom nav bar
               left: 0,
               right: 0,
               child: Row(

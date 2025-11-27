@@ -1,4 +1,5 @@
 import 'package:aarogya/features/physio_trainer/physio_trainer_controller.dart';
+import 'package:aarogya/utils/app_theme.dart';
 import 'package:aarogya/firebase_options.dart';
 import 'package:aarogya/login/login_screen.dart';
 import 'package:aarogya/medicine/medicine_analyzer.dart';
@@ -49,9 +50,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       title: 'AarogyaAi',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-      ),
+      theme: AppTheme.lightTheme,
       debugShowCheckedModeBanner: false,
       
       // Add named route for agent test page
